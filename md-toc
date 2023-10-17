@@ -69,7 +69,7 @@ for my $header (@$headers) {
 
     $prefix =~ s/^##//;
     $prefix =~ s/^\s+//;
-    $prefix =~ s/#/  /g;
+    $prefix =~ s/#/    /g;
     $prefix = "$prefix*";
 
     my $link = title2link($title);

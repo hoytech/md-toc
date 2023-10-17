@@ -5,12 +5,14 @@ This simple script will scan a markdown file for headers and build a table-of-co
 <!-- TOC FOLLOWS -->
 <!-- START OF TOC -->
 <!-- md-toc: https://github.com/hoytech/md-toc -->
+
 * [Usage](#usage)
   * [Setup](#setup)
     * [Custom Nesting](#custom-nesting)
   * [Updating](#updating)
   * [Warnings](#warnings)
 * [Author](#author)
+
 <!-- END OF TOC -->
 
 ## Usage

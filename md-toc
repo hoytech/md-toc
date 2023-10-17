@@ -1,0 +1,109 @@
+#!/usr/bin/env perl
+
+use strict;
+
+sub usage {
+    print <<END;
+
+    Markdown Table Of Contents generator - Doug Hoyte
+
+    Usage: $0 <filename> [minLevels-maxLevels]
+
+    Example: $0 README.md 2-4
+      -> Update README.md, include h2-h4 (##, ###, ####) headers in ToC
+
+    Before running the first time, put the following on a line by itself (with no leading whitespace):
+
+    <!-- TOC FOLLOWS -->
+
+END
+    exit 1;
+}
+
+my $filename = shift // usage();
+
+my $minLevels = 2;
+my $maxLevels = 4;
+
+{
+    my $levelSpec = shift;
+    if (defined $levelSpec) {
+        $levelSpec =~ /^(\d+)-(\d+)$/ || die "unexpected minLevels-maxLevels param: $levelSpec";
+        ($minLevels, $maxLevels) = ($1, $2);
+    }
+}
+
+
+my $lines = '';
+my $headers = [];
+my $seenHeaders = {};
+
+{
+    open(my $fh, '<', $filename) || die "unable to open '$filename': $!";
+
+    while (<$fh>) {
+        next if /^<!-- START OF TOC -->/ .. /^<!-- END OF TOC -->/;
+
+        $lines .= $_;
+
+        if (/^[#]+ (.*)/) {
+            my $whole = $&;
+            my $title = $1;
+
+            my $link = title2link($1);
+            die "duplicate header: $link" if $seenHeaders->{$link};
+            $seenHeaders->{$link}++;
+            push @$headers, $whole;
+        }
+    }
+}
+
+my $toc = '';
+
+for my $header (@$headers) {
+    $header =~ /^(#+) (.*)/;
+    my $prefix = $1;
+    my $title = $2;
+
+    next if length($prefix) < $minLevels || length($prefix) > $maxLevels;
+
+    $prefix =~ s/^##//;
+    $prefix =~ s/^\s+//;
+    $prefix =~ s/#/  /g;
+    $prefix = "$prefix*";
+
+    my $link = title2link($title);
+    $toc .= "$prefix [$title](#$link)\n";
+}
+
+my $tmpFilename = "$filename.md-toc.tmp";
+die "temp file '$tmpFilename' already exists" if -e $tmpFilename;
+
+{
+    open(my $ofh, '>', $tmpFilename) || die "unable to open temp file '$tmpFilename': $!";
+
+    $lines =~ s{\n<!-- TOC FOLLOWS -->}{\n<!-- TOC FOLLOWS -->\n<!-- START OF TOC -->\n<!-- md-toc: https://github.com/hoytech/md-toc -->\n$toc<!-- END OF TOC -->};
+
+    print $ofh $lines;
+}
+
+
+while ($lines =~ m{\[([^\]]*?)\][(]#([^)]*?)[)]}g) {
+    my $text = $1;
+    my $link = $2;
+    if (!$seenHeaders->{$link}) {
+        print STDERR "WARNING: Unresolved link: $link ($text)\n";
+    }
+}
+
+rename($tmpFilename, $filename) || die "rename failed: $!";
+
+
+
+sub title2link {
+    my $title = shift;
+    my $link = lc $title;
+    $link =~ s/\s+/-/g;
+    $link =~ s/[+]//g;
+    return $link;
+}

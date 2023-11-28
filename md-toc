@@ -104,6 +104,6 @@ sub title2link {
     my $title = shift;
     my $link = lc $title;
     $link =~ s/\s+/-/g;
-    $link =~ s/[+]//g;
+    $link =~ s/[+`]//g;
     return $link;
 }
